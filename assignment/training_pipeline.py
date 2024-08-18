@@ -1,32 +1,43 @@
-from datetime import datetime
-import pickle
-import os
 import argparse
 import logging
+import os
+import pickle
+from datetime import datetime
 from typing import Any, Union
 
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_absolute_error
 import optuna
+import pandas as pd
 import xgboost
-
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.model_selection import train_test_split
 
 DIR_PATH = "./models"
-DATASET_PATH = "https://raw.githubusercontent.com/xtreamsrl/xtream-ai-assignment-engineer/main/datasets/diamonds/diamonds.csv"
+DATASET_PATH = (
+    "https://raw.githubusercontent.com/xtreamsrl/"
+    "xtream-ai-assignment-engineer/main/datasets/diamonds/diamonds.csv"
+)
 
-# Create and initialise logger
+# Create and initialize logger
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     encoding='utf-8',
-    format="%(asctime)s %(levelname)s: %(message)s",
-    level=logging.DEBUG
+    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+    level=logging.INFO
 )
+
+# Change working directory so that code so that the behaviour
+# is the same even if the code is executed from a different location
+abspath = os.path.abspath(__file__)
+dname = os.path.dirname(abspath)
+os.chdir(dname)
 
 
 def basic_preprocess_diamonds(diamond_df: pd.DataFrame) -> pd.DataFrame:
-    return diamond_df[(diamond_df.x * diamond_df.y * diamond_df.z != 0) & (diamond_df.price > 0)]
+    return diamond_df[
+        (diamond_df.x * diamond_df.y * diamond_df.z != 0)
+        & (diamond_df.price > 0)
+        ]
 
 
 def preprocess_diamond_linear_reg(
@@ -37,7 +48,8 @@ def preprocess_diamond_linear_reg(
 
     diamond_df = diamond_df.drop(columns=['depth', 'table', 'y', 'z'])
     diamond_df = pd.get_dummies(
-        diamond_df, columns=['cut', 'color', 'clarity'], drop_first=True)
+        diamond_df, columns=['cut', 'color', 'clarity'], drop_first=True
+    )
 
     x = diamond_df.drop(columns='price')
     y = diamond_df.price
@@ -103,7 +115,7 @@ def train_ev_model(
     r2 = round(r2_score(y_test, pred), 4)
     mae = round(mean_absolute_error(y_test, pred), 2)
 
-    logger.info("%s trained. R2 = %f, MAE = %f", model, r2, mae)
+    logger.info("%s trained. R2 = %f, MAE = %f", model_type, r2, mae)
 
     # Save model as pickle
     model_file_path = os.path.join(save_dir, "model_files")
@@ -134,7 +146,8 @@ def train_ev_model(
     report["index"] = len(report_df)
     report_df.loc[len(report_df)] = report
     report_df.to_csv(os.path.join(save_dir, "report.csv"), index=False)
-    logger.info("Model report added to %s", os.path.join(save_dir, "report.csv"))
+    logger.info("Model report added to %s",
+                os.path.join(save_dir, "report.csv"))
 
 
 def tune_hyperparameters(
@@ -150,9 +163,15 @@ def tune_hyperparameters(
         param = {
             'lambda': trial.suggest_float('lambda', 1e-8, 1.0, log=True),
             'alpha': trial.suggest_float('alpha', 1e-8, 1.0, log=True),
-            'colsample_bytree': trial.suggest_categorical('colsample_bytree', [0.3, 0.4, 0.5, 0.7]),
-            'subsample': trial.suggest_categorical('subsample', [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]),
-            'learning_rate': trial.suggest_float('learning_rate', 1e-8, 1.0, log=True),
+            'colsample_bytree': trial.suggest_categorical(
+                'colsample_bytree', [0.3, 0.4, 0.5, 0.7]
+            ),
+            'subsample': trial.suggest_categorical(
+                'subsample', [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            ),
+            'learning_rate': trial.suggest_float(
+                'learning_rate', 1e-8, 1.0, log=True
+            ),
             'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
             'max_depth': trial.suggest_int('max_depth', 3, 9),
             'random_state': 42,
@@ -213,7 +232,10 @@ def pipeline(
             "enable_categorical": True
         }
         if hyperparameter_tuning:
-            logger.info("Performing hyperparameter tuning (%d trials)", n_tuning_trials)
+            logger.info(
+                "Performing hyperparameter tuning (%d trials)",
+                n_tuning_trials
+            )
             model_kwargs.update(tune_hyperparameters(
                 train_dataset, seed, n_tuning_trials))
 
@@ -293,4 +315,12 @@ if __name__ == "__main__":
     save_dir = args.save_dir
     test_split = args.test_split
 
-    pipeline(model, dataset_path, tuning, seed, tuning_trials, save_dir, test_split)
+    pipeline(
+        model,
+        dataset_path,
+        tuning,
+        seed,
+        tuning_trials,
+        save_dir,
+        test_split
+    )
