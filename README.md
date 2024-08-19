@@ -73,7 +73,7 @@ I have completed all four challenges. Here is a guide on how to use all the comp
 
 ### Environment
 
-To run basically anything, an environment with the correct dependencies is needed. For this project `conda` can be used. For this reasin, you will need conda installed in your system. The procadure if different depending on your OS/distro. To create the appropiate environment, there is a `env.yml` file in the `assignment` folder. To create the environment, run the command:
+To run basically anything, an environment with the correct dependencies is needed. I have used `conda`. For this reason, you will need conda installed in your system. The procedure is different depending on your OS/distro. To create the appropriate environment, there is a `env.yml` file in the `assignment` folder. To create the environment, run the command:
 
 ```bash
 conda env create -f assignment/env.yml
@@ -85,7 +85,7 @@ To enter the virtual environment (after restarting the shell or sourcing the she
 conda activate diamond-env
 ```
 
-To exit the environment:
+To exit the environment after you are finished with the project:
 
 ```bash
 conda deactivate
@@ -160,7 +160,7 @@ Then, to start the server, execute the script `server.py`:
 python assignment/server.py
 ```
 
-This command will start a uvicorn FastAPI server. The server will listen for API requests. On startup the server will check for the database connection and it will load the best trained model according to `assignment/models/report.csv` using the MAE metric. Again, if you want to change the behaviour of the scripts, it offers several arguments. By running:
+This command will start a uvicorn FastAPI server. The server will listen for API requests. On startup the server will check for the database connection and it will load the best trained model according to `assignment/models/report.csv` using the MAE metric. Again, if you want to change the behaviour of the scripts, there are several arguments. By running:
 
 ```bash
 python assignment/server.py -h
@@ -222,7 +222,7 @@ curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:8000/predictio
 ```
 
 #### `/n-similar`
-Given cut, color, clarity and carat, returns the *n* most similar diamonds according to weight.
+Given cut, color, clarity and carat, return the *n* most similar diamonds according to weight.
 
 Method: `GET`
 
@@ -243,6 +243,7 @@ curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:8000/n-similar
 ```
 
 All requests are saved to the database. Specifically, after a request is performed, a document is saved with the following fields:
+
 - `method`: the API method, such as `GET`
 - `url`: the url of the request
 - `query_parameters`: the parameters of the query
