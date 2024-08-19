@@ -69,10 +69,29 @@ Observability is key. Save every request and response made to the APIs to a **pr
 
 ## How to run
 
-I have completed all four challenges. Here is a guide on hiw to use all the components.
+I have completed all four challenges. Here is a guide on how to use all the components.
 
 ### Environment
-TODO
+
+To run basically anything, an environment with the correct dependencies is needed. For this project `conda` can be used. For this reasin, you will need conda installed in your system. The procadure if different depending on your OS/distro. To create the appropiate environment, there is a `env.yml` file in the `assignment` folder. To create the environment, run the command:
+
+```bash
+conda env create -f assignment/env.yml
+```
+
+To enter the virtual environment (after restarting the shell or sourcing the shell config file), just use the command:
+
+```bash
+conda activate diamond-env
+```
+
+To exit the environment:
+
+```bash
+conda deactivate
+```
+
+All the following script assume that you are running them in the virtual environment.
 
 ### Database
 
