@@ -2,8 +2,9 @@ import argparse
 import logging
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 import uvicorn
+from db import db_check, store_request
 from training_pipeline import DATASET_PATH, DIR_PATH
 
 from utils import (
@@ -37,6 +38,7 @@ def get_similar_diamonds(
     clarity: str,
     carat: float,
     n: int,
+    request: Request
 ):
 
     global diamond_df
@@ -49,7 +51,10 @@ def get_similar_diamonds(
 
     ranked_similarity = abs(similar_diamonds["carat"] - carat).sort_values()
     selection = ranked_similarity.index.to_list()[:n]
-    return diamond_df.loc[selection].to_dict("records")
+    response = diamond_df.loc[selection].to_dict("records")
+    store_request(request, response, db_url, db_name, collection_name)
+
+    return response
 
 
 @app.get("/prediction")
@@ -63,6 +68,7 @@ def predict(
     x: float,
     y: float,
     z: float,
+    request: Request,
 ) -> float:
 
     global diamond_df, model_type
@@ -84,8 +90,10 @@ def predict(
     elif model_type == "xgboost":
         to_predict = preprocess_xgboost_sample(sample)
 
-    p = model.predict(to_predict)[0]
-    return p
+    prediction = float(model.predict(to_predict)[0])
+    store_request(request, prediction, db_url, db_name, collection_name)
+
+    return prediction
 
 
 if __name__ == "__main__":
@@ -127,16 +135,47 @@ if __name__ == "__main__":
         help="specify different directory where report and model are saved",
     )
 
+    parser.add_argument(
+        "--db-url",
+        type=str,
+        nargs='?',
+        default="mongodb://localhost:27017/",
+        help="the mongodb database url",
+    )
+
+    parser.add_argument(
+        "--db-name",
+        type=str,
+        nargs='?',
+        default="diamond_db",
+        help="the mongodb database name",
+    )
+
+    parser.add_argument(
+        "--collection-name",
+        type=str,
+        nargs='?',
+        default="api_requests",
+        help="the mongodb collection name",
+    )
+
     args = parser.parse_args()
     model_to_use = args.model
     criteria = args.criteria
     dataset_path = args.dataset
     save_dir = args.save_dir
 
+    global db_url, db_name, collection_name
+
+    db_url = args.db_url
+    db_name = args.db_name
+    collection_name = args.collection_name
+
+    db_check(db_url, db_name, collection_name)
+
     global diamond_df, model, model_type
 
     diamond_df = load_dataset(dataset_path)
-
     model, model_type = load_best_model(
         save_dir,
         None if model_to_use == "best" else model_to_use,

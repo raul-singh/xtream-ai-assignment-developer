@@ -2,11 +2,17 @@ import pandas as pd
 import streamlit as st
 import requests
 
-DEFAULT_ENDPOINT = "127.0.0.1:8000"
+DEFAULT_SERVER = "127.0.0.1:8000"
 
 
 def similar_n(cut, color, clarity, carat, n, endpoint):
-    payload = {"cut": cut, "color": color, "clarity": clarity, "carat": carat, "n": n}
+    payload = {
+        "cut": cut,
+        "color": color,
+        "clarity": clarity,
+        "carat": carat,
+        "n": n
+    }
     response = requests.get(f"http://{endpoint}/n-similar", params=payload)
     diamonds = response.json()
     return pd.DataFrame(diamonds)
@@ -30,7 +36,7 @@ def predict(cut, color, clarity, carat, depth, table, x, y, z, endpoint):
 
 title_cols = st.columns(2)
 
-endpoint = title_cols[1].text_input("API endpoint", value=DEFAULT_ENDPOINT)
+endpoint = title_cols[1].text_input("API server", value=DEFAULT_SERVER)
 title_cols[0].write("# Diamonds")
 st.write("---")
 
@@ -78,20 +84,22 @@ if pred_btn:
         endpoint
     )
     st.write(f"The predicted price is :blue-background[{pred_price:.2f}]")
-    # st.dataframe(similar_n(cut, color, clarity, carat, n))
 
 st.write("---")
 st.write("## Find *n* similar")
 st.write(
     (
-        "Given *cut*, *color*, and *clarity*, and *carat* of a diamond display "
-        "the *n* most similar diamonds acording to weight."
+        "Given *cut*, *color*, and *clarity*, and *carat* of a diamond "
+        "display the *n* most similar diamonds acording to weight."
     )
 )
 
 cols = st.columns(6, vertical_alignment="bottom")
 
-cut = cols[0].selectbox("Cut", ["Fair", "Good", "Very Good", "Ideal", "Premium"])
+cut = cols[0].selectbox(
+    "Cut",
+    ["Fair", "Good", "Very Good", "Ideal", "Premium"]
+)
 color = cols[1].selectbox("Color", ["D", "E", "F", "G", "H", "I", "J"])
 clarity = cols[2].selectbox(
     "Clarity", ["IF", "VVS1", "VVS2", "VS1", "VS2", "SI1", "SI2", "I1"]
