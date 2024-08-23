@@ -12,10 +12,11 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 
-DIR_PATH = "./models"
-DATASET_PATH = (
-    "https://raw.githubusercontent.com/xtreamsrl/"
-    "xtream-ai-assignment-engineer/main/datasets/diamonds/diamonds.csv"
+from assignment.constants.constants import DATASET_PATH, MODEL_DIR_PATH
+from assignment.preprocessing.train_preprocess import (
+    basic_preprocess_diamonds,
+    preprocess_diamond_linear_reg,
+    preprocess_diamond_xgboost,
 )
 
 # Create and initialize logger
@@ -25,75 +26,6 @@ logging.basicConfig(
     format="%(asctime)s %(name)s %(levelname)s: %(message)s",
     level=logging.INFO
 )
-
-# Change working directory so that code so that the behaviour
-# is the same even if the code is executed from a different location
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
-
-
-def basic_preprocess_diamonds(diamond_df: pd.DataFrame) -> pd.DataFrame:
-    return diamond_df[
-        (diamond_df.x * diamond_df.y * diamond_df.z != 0)
-        & (diamond_df.price > 0)
-        ]
-
-
-def preprocess_diamond_linear_reg(
-    diamond_df: pd.DataFrame,
-    test_size: float,
-    seed: int
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-
-    diamond_df = diamond_df.drop(columns=['depth', 'table', 'y', 'z'])
-    diamond_df = pd.get_dummies(
-        diamond_df, columns=['cut', 'color', 'clarity'], drop_first=True
-    )
-
-    x = diamond_df.drop(columns='price')
-    y = diamond_df.price
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=test_size, random_state=seed)
-
-    train_dataset = x_train, y_train
-    test_dataset = x_test, y_test
-
-    return train_dataset, test_dataset
-
-
-def preprocess_diamond_xgboost(
-    diamond_df: pd.DataFrame,
-    test_size: float,
-    seed: int
-) -> tuple[pd.DataFrame, pd.DataFrame]:
-
-    diamond_df = diamond_df.copy()
-    diamond_df['cut'] = pd.Categorical(
-        diamond_df['cut'],
-        categories=['Fair', 'Good', 'Very Good', 'Ideal', 'Premium'],
-        ordered=True
-    )
-    diamond_df['color'] = pd.Categorical(
-        diamond_df['color'],
-        categories=['D', 'E', 'F', 'G', 'H', 'I', 'J'],
-        ordered=True
-    )
-    diamond_df['clarity'] = pd.Categorical(
-        diamond_df['clarity'],
-        categories=['IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1'],
-        ordered=True
-    )
-
-    x = diamond_df.drop(columns='price')
-    y = diamond_df.price
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=test_size, random_state=seed)
-
-    train_dataset = x_train, y_train
-    test_dataset = x_test, y_test
-
-    return train_dataset, test_dataset
 
 
 def train_ev_model(
@@ -209,7 +141,7 @@ def pipeline(
     seed: int,
     n_tuning_trials: int,
     save_dir: int,
-    test_split: float
+    test_split: float,
 ):
     # Load dataset and perform basic preprocess common to all models
     logger.info("Loading dataset...")
@@ -221,8 +153,13 @@ def pipeline(
         train_dataset, test_dataset = preprocess_diamond_linear_reg(
             diamond_df,  test_split, seed)
         logger.info("Training %s model...", model)
-        train_ev_model(train_dataset, test_dataset,
-                       LinearRegression, model, save_dir)
+        train_ev_model(
+            train_dataset,
+            test_dataset,
+            LinearRegression,
+            model,
+            save_dir
+        )
 
     elif model == "xgboost":
         train_dataset, test_dataset = preprocess_diamond_xgboost(
@@ -236,12 +173,23 @@ def pipeline(
                 "Performing hyperparameter tuning (%d trials)",
                 n_tuning_trials
             )
-            model_kwargs.update(tune_hyperparameters(
-                train_dataset, seed, n_tuning_trials))
+            model_kwargs.update(
+                tune_hyperparameters(
+                    train_dataset,
+                    seed,
+                    n_tuning_trials
+                )
+            )
 
         logger.info("Training %s model...", model)
-        train_ev_model(train_dataset, test_dataset,
-                       xgboost.XGBRegressor, model, save_dir, **model_kwargs)
+        train_ev_model(
+            train_dataset,
+            test_dataset,
+            xgboost.XGBRegressor,
+            model,
+            save_dir,
+            **model_kwargs
+        )
 
 
 if __name__ == "__main__":
@@ -294,7 +242,7 @@ if __name__ == "__main__":
         "--save-dir",
         type=str,
         nargs='?',
-        default=DIR_PATH,
+        default=MODEL_DIR_PATH,
         help="specify different directory for models and reports",
     )
 

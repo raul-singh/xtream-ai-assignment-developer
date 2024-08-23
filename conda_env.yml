@@ -13,3 +13,4 @@ dependencies:
   - streamlit
   - requests
   - pymongo
+  - python-dotenv

@@ -62,5 +62,3 @@ def store_request(
         collection = client[db_name][col_name]
         doc_id = collection.insert_one(document)
         logger.info("Inserted API request in database: %s", doc_id)
-
-    logger.info("Request stored in database.")

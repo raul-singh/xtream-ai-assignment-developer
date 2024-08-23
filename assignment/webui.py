@@ -2,10 +2,8 @@ import pandas as pd
 import streamlit as st
 import requests
 
-DEFAULT_SERVER = "127.0.0.1:8000"
 
-
-def similar_n(cut, color, clarity, carat, n, endpoint):
+def similar_n(cut, color, clarity, carat, n, url):
     payload = {
         "cut": cut,
         "color": color,
@@ -13,12 +11,12 @@ def similar_n(cut, color, clarity, carat, n, endpoint):
         "carat": carat,
         "n": n
     }
-    response = requests.get(f"http://{endpoint}/n-similar", params=payload)
+    response = requests.get(f"http://{url}/n-similar", params=payload)
     diamonds = response.json()
     return pd.DataFrame(diamonds)
 
 
-def predict(cut, color, clarity, carat, depth, table, x, y, z, endpoint):
+def predict(cut, color, clarity, carat, depth, table, x, y, z, url):
     payload = {
         "cut": cut,
         "color": color,
@@ -30,7 +28,7 @@ def predict(cut, color, clarity, carat, depth, table, x, y, z, endpoint):
         "y": y,
         "z": z,
     }
-    response = requests.get(f"http://{endpoint}/prediction", params=payload)
+    response = requests.get(f"http://{url}/prediction", params=payload)
     return response.json()
 
 

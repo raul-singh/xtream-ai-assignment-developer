@@ -1,13 +1,12 @@
 import argparse
 import logging
-import os
 
 from fastapi import FastAPI, Request
 import uvicorn
-from db import db_check, store_request
-from training_pipeline import DATASET_PATH, DIR_PATH
+from assignment.constants.constants import DATASET_PATH, MODEL_DIR_PATH
+from assignment.database.database import db_check, store_request
 
-from utils import (
+from assignment.utils.utils import (
     load_best_model,
     load_dataset,
     preprocess_linear_sample,
@@ -22,11 +21,6 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# Change working directory so that code so that the behaviour
-# is the same even if the code is executed from a different location
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
 
 app = FastAPI()
 
@@ -39,7 +33,7 @@ def get_similar_diamonds(
     carat: float,
     n: int,
     request: Request
-):
+) -> list:
 
     global diamond_df
 
@@ -131,7 +125,7 @@ if __name__ == "__main__":
         "--save-dir",
         type=str,
         nargs='?',
-        default=DIR_PATH,
+        default=MODEL_DIR_PATH,
         help="specify different directory where report and model are saved",
     )
 

@@ -6,7 +6,9 @@ import pandas as pd
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
 
-from training_pipeline import DIR_PATH, basic_preprocess_diamonds
+from assignment.constants.constants import MODEL_DIR_PATH
+from assignment.preprocessing.train_preprocess import basic_preprocess_diamonds
+
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
@@ -21,39 +23,6 @@ logging.basicConfig(
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
 os.chdir(dname)
-
-
-def preprocess_xgboost_sample(sample):
-    new_row = pd.DataFrame(sample, index=[0])
-
-    new_row['cut'] = pd.Categorical(
-        new_row['cut'],
-        categories=['Fair', 'Good', 'Very Good', 'Ideal', 'Premium'],
-        ordered=True
-    )
-    new_row['color'] = pd.Categorical(
-        new_row['color'],
-        categories=['D', 'E', 'F', 'G', 'H', 'I', 'J'],
-        ordered=True
-    )
-    new_row['clarity'] = pd.Categorical(
-        new_row['clarity'],
-        categories=['IF', 'VVS1', 'VVS2', 'VS1', 'VS2', 'SI1', 'SI2', 'I1'],
-        ordered=True
-    )
-    return new_row
-
-
-def preprocess_linear_sample(sample):
-    global diamond_df
-    df = diamond_df.copy().drop(columns="price")
-    new_row = pd.DataFrame(sample, index=[0])
-    df = pd.concat([df, new_row], ignore_index=True)
-    df = df.drop(columns=['depth', 'table', 'y', 'z'])
-    df = pd.get_dummies(
-        df, columns=['cut', 'color', 'clarity'], drop_first=True
-    )
-    return df.iloc[[-1]]
 
 
 def load_dataset(dataset_path: str) -> pd.DataFrame:
@@ -92,7 +61,7 @@ def load_best_model(
     best_model_type = report_df.loc[ranking[0], "type"]
 
     with open(
-        os.path.join(DIR_PATH, "model_files", best_model_id),
+        os.path.join(MODEL_DIR_PATH, "model_files", best_model_id),
         "rb"
     ) as input_file:
         model = pickle.load(input_file)
