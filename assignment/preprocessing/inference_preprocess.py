@@ -23,8 +23,11 @@ def preprocess_xgboost_sample(sample: dict[str, Any]) -> pd.DataFrame:
     return new_row
 
 
-def preprocess_linear_sample(sample: dict[str, Any]) -> pd.DataFrame:
-    global diamond_df
+def preprocess_linear_sample(
+    sample: dict[str, Any],
+    diamond_df: pd.DataFrame
+) -> pd.DataFrame:
+
     df = diamond_df.copy().drop(columns="price")
     new_row = pd.DataFrame(sample, index=[0])
     df = pd.concat([df, new_row], ignore_index=True)

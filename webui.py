@@ -1,9 +1,14 @@
+import os
+from dotenv import load_dotenv
 import pandas as pd
 import streamlit as st
 import requests
 
+load_dotenv()
+API_SERVER_URL = os.getenv("API_SERVER_URL")
 
-def similar_n(cut, color, clarity, carat, n, url):
+
+def similar_n(cut, color, clarity, carat, n):
     payload = {
         "cut": cut,
         "color": color,
@@ -11,12 +16,15 @@ def similar_n(cut, color, clarity, carat, n, url):
         "carat": carat,
         "n": n
     }
-    response = requests.get(f"http://{url}/n-similar", params=payload)
+    response = requests.get(
+        f"http://{API_SERVER_URL}/n-similar",
+        params=payload
+    )
     diamonds = response.json()
     return pd.DataFrame(diamonds)
 
 
-def predict(cut, color, clarity, carat, depth, table, x, y, z, url):
+def predict(cut, color, clarity, carat, depth, table, x, y, z):
     payload = {
         "cut": cut,
         "color": color,
@@ -28,14 +36,14 @@ def predict(cut, color, clarity, carat, depth, table, x, y, z, url):
         "y": y,
         "z": z,
     }
-    response = requests.get(f"http://{url}/prediction", params=payload)
+    response = requests.get(
+        f"http://{API_SERVER_URL}/prediction",
+        params=payload
+    )
     return response.json()
 
 
-title_cols = st.columns(2)
-
-endpoint = title_cols[1].text_input("API server", value=DEFAULT_SERVER)
-title_cols[0].write("# Diamonds")
+st.write("# Diamonds")
 st.write("---")
 
 st.write("## Predict price")
@@ -79,7 +87,7 @@ if pred_btn:
         pred_x,
         pred_y,
         pred_z,
-        endpoint
+
     )
     st.write(f"The predicted price is :blue-background[{pred_price:.2f}]")
 
@@ -107,4 +115,4 @@ n = cols[4].number_input("*n*", min_value=0, step=1, value=5)
 find_btn = cols[5].button("Find")
 
 if find_btn:
-    st.dataframe(similar_n(cut, color, clarity, carat, n, endpoint))
+    st.dataframe(similar_n(cut, color, clarity, carat, n))

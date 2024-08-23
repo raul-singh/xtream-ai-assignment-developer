@@ -1,4 +1,3 @@
-import argparse
 import logging
 import os
 import pickle
@@ -12,7 +11,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 
-from assignment.constants.constants import DATASET_PATH, MODEL_DIR_PATH
 from assignment.preprocessing.train_preprocess import (
     basic_preprocess_diamonds,
     preprocess_diamond_linear_reg,
@@ -23,7 +21,7 @@ from assignment.preprocessing.train_preprocess import (
 logger = logging.getLogger(__name__)
 logging.basicConfig(
     encoding='utf-8',
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
+    format="%(name)s %(levelname)s: %(message)s",
     level=logging.INFO
 )
 
@@ -190,85 +188,3 @@ def pipeline(
             save_dir,
             **model_kwargs
         )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "-m",
-        "--model",
-        type=str,
-        choices=["linear", "xgboost"],
-        nargs='?',
-        default="linear",
-        help="specify which model to train and save"
-    )
-
-    parser.add_argument(
-        "-t",
-        "--tuning",
-        action="store_true",
-        help="perform hyperparameter tuning, works only with xgboost"
-    )
-
-    parser.add_argument(
-        "-s",
-        "--seed",
-        type=int,
-        nargs='?',
-        default=42,
-        help="random seed",
-    )
-
-    parser.add_argument(
-        "-d",
-        "--dataset",
-        type=str,
-        nargs='?',
-        default=DATASET_PATH,
-        help="the dataset path/url",
-    )
-
-    parser.add_argument(
-        "--tuning-trials",
-        type=int,
-        nargs='?',
-        default=100,
-        help="how many hyperparameter tuning trials to perform",
-    )
-
-    parser.add_argument(
-        "--save-dir",
-        type=str,
-        nargs='?',
-        default=MODEL_DIR_PATH,
-        help="specify different directory for models and reports",
-    )
-
-    parser.add_argument(
-        "--test-split",
-        type=float,
-        nargs='?',
-        default=0.2,
-        help="the test/training split ratio.",
-    )
-
-    args = parser.parse_args()
-    model = args.model
-    dataset_path = args.dataset
-    seed = args.seed
-    tuning = args.tuning
-    tuning_trials = args.tuning_trials
-    save_dir = args.save_dir
-    test_split = args.test_split
-
-    pipeline(
-        model,
-        dataset_path,
-        tuning,
-        seed,
-        tuning_trials,
-        save_dir,
-        test_split
-    )

@@ -1,28 +1,16 @@
 import logging
 import os
 import pickle
-from typing import Optional, Union
+from typing import Union
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 from xgboost import XGBRegressor
 
-from assignment.constants.constants import MODEL_DIR_PATH
 from assignment.preprocessing.train_preprocess import basic_preprocess_diamonds
 
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    encoding='utf-8',
-    format="%(asctime)s %(name)s %(levelname)s: %(message)s",
-    level=logging.INFO
-)
-
-# Change working directory so that code so that the behaviour
-# is the same even if the code is executed from a different location
-abspath = os.path.abspath(__file__)
-dname = os.path.dirname(abspath)
-os.chdir(dname)
 
 
 def load_dataset(dataset_path: str) -> pd.DataFrame:
@@ -33,22 +21,30 @@ def load_dataset(dataset_path: str) -> pd.DataFrame:
     return diamond_df
 
 
-def load_best_model(
-    directory: str,
-    model_type: Optional[str] = None,
-    criteria: str = "MAE"
-) -> Union[LinearRegression, XGBRegressor]:
+def load_model_report() -> pd.DataFrame:
+    report_path = os.path.join(
+        os.getenv("MODEL_DIR_PATH"),
+        "report.csv"
+    )
 
     try:
-        report_df = pd.read_csv(os.path.join(directory, "report.csv"))
+        report_df = pd.read_csv(report_path)
 
     except FileNotFoundError:
-        raise RuntimeError((
+        raise FileNotFoundError((
             "No model report found. Make sure to train a model "
             "and put it in the right directory using training_pipeline.py"
         ))
 
-    if model_type is not None:
+    return report_df
+
+
+def get_best_model_id(
+    model_type: str,
+    report_df: pd.DataFrame,
+    criteria: str = "MAE"
+):
+    if model_type != "overall":
         report_df = report_df.loc[report_df["type"] == model_type]
 
     if criteria == "MAE":
@@ -57,20 +53,30 @@ def load_best_model(
         ascending = False
 
     ranking = report_df[criteria].sort_values(ascending=ascending).index
-    best_model_id = report_df.loc[ranking[0], "model_id"]
-    best_model_type = report_df.loc[ranking[0], "type"]
-
-    with open(
-        os.path.join(MODEL_DIR_PATH, "model_files", best_model_id),
-        "rb"
-    ) as input_file:
-        model = pickle.load(input_file)
+    best = report_df.loc[ranking[0], "model_id"]
+    actual_model_type = report_df.loc[ranking[0], "type"]
 
     logger.info(
-        "Loaded best %s model with %s of %f",
-        best_model_type,
+        "Found best %s model with %s of %f",
+        best,
         criteria,
         report_df.loc[ranking[0], criteria]
     )
 
-    return model, best_model_type
+    return best, actual_model_type
+
+
+def load_model(
+    model_id: str,
+    model_dir_path: str
+) -> Union[LinearRegression, XGBRegressor]:
+
+    with open(
+        os.path.join(model_dir_path, "model_files", model_id),
+        "rb"
+    ) as input_file:
+        model = pickle.load(input_file)
+
+    logger.info("Model loaded.")
+
+    return model

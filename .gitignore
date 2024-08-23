@@ -168,4 +168,4 @@ cython_debug/
 /.idea/xtream-ai-assignment-developer.iml
 
 # Saved models
-/assignment/models
+/models
