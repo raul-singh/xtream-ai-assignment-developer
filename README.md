@@ -71,12 +71,14 @@ Observability is key. Save every request and response made to the APIs to a **pr
 
 I have completed all four challenges. Here is a guide on how to use all the components.
 
-### Environment
+### Preliminary setup
 
-To run basically anything, an environment with the correct dependencies is needed. I have used `conda`. For this reason, you will need conda installed in your system. The procedure is different depending on your OS/distro. To create the appropriate environment, there is a `env.yml` file in the `assignment` folder. To create the environment, run the command:
+#### Environment
+
+To run basically anything, an environment with the correct dependencies is needed. I have used `conda`. For this reason, you will need conda installed in your system. The procedure is different depending on your OS/distro. To create the appropriate environment, there is a `conda_env.yml` file which will create the appropriate environment. To create the environment, run the command:
 
 ```bash
-conda env create -f assignment/env.yml
+conda env create -f conda_env.yml
 ```
 
 To enter the virtual environment (after restarting the shell or sourcing the shell config file), just use the command:
@@ -85,24 +87,29 @@ To enter the virtual environment (after restarting the shell or sourcing the she
 conda activate diamond-env
 ```
 
-To exit the environment after you are finished with the project:
+Additionally, all the important constants in the project are saved in the `.env` file. The file contains:
 
-```bash
-conda deactivate
+```
+DATASET_PATH = "https://raw.githubusercontent.com/xtreamsrl/xtream-ai-assignment-engineer/main/datasets/diamonds/diamonds.csv"
+MODEL_DIR_PATH = "models"
+API_SERVER_URL = "127.0.0.1:8000"
+DB_URL = "mongodb://localhost:27017/"
+DB_NAME = "diamond_db"
+DB_COLLECTION = "api_requests"
 ```
 
 All the following script assume that you are running them in the virtual environment.
 
-### Database
+#### Database
 
 The API server requires a MongoDB database where it will store all the API requests. To install MongoDB, you can follow the instructions for your OS on the official MongoDB [installation page](https://www.mongodb.com/docs/manual/installation/).
 
 ### Training pipeline
 
-The training pipeline can be executed by launching the script `training_pipeline.py`. From the main directory of the repo:
+The training pipeline can be executed by launching the script `run_pipeline.py`. From the main directory of the repo:
 
 ```bash
-python assignment/training_pipeline.py
+python run_pipeline.py
 ```
 
 Running the script without flags will result in training a linear model using a dataset from the default location. This behaviour can be changed using flags and arguments.
@@ -111,26 +118,13 @@ All the possible options can be seen with:
 ```bash
 python assignment/training_pipeline.py -h
 ```
-```
-usage: training_pipeline.py [-h] [-m [{linear,xgboost}]] [-t] [-s [SEED]] [-d [DATASET]] [--tuning-trials [TUNING_TRIALS]] [--save-dir [SAVE_DIR]] [--test-split [TEST_SPLIT]]
 
-options:
-  -h, --help            show this help message and exit
-  -m [{linear,xgboost}], --model [{linear,xgboost}]
-                        specify which model to train and save
-  -t, --tuning          perform hyperparameter tuning, works only with xgboost
-  -s [SEED], --seed [SEED]
-                        random seed
-  -d [DATASET], --dataset [DATASET]
-                        the dataset path/url
-  --tuning-trials [TUNING_TRIALS]
-                        how many hyperparameter tuning trials to perform
-  --save-dir [SAVE_DIR]
-                        specify different directory for models and reports
-  --test-split [TEST_SPLIT]
-                        the test/training split ratio
-
-```
+- `-h, --help`: shows the help message
+- `-m --model`: specify which model to train among `linear` and `xgboost`, default is `linear`
+- `-t, --tuning`: flag used to specify whether the pipeline should include hyperparameter tuning (for XGBoost)
+- `-s, --seed`: specificy the random seed, default is `42`
+- `--tuning-trials`: how many hyperparameter tuning trials to perform, default is `100`
+- `test-split`: what ratio of training data to reserve for the test set, default is `0.2`
 
 So, for example, if you want to train an `xgboost` model with hyperparameter tuning, you can do:
 
@@ -144,7 +138,7 @@ Or, for short:
 python assignment/training_pipeline.py -m xgboost -t
 ```
 
-If using the default paths, after training, the script will save a report of the model performance in `assignment/models/report.csv` and a *pickle* file of the model itself in `assignment/models/model_files`.
+If using the default paths specified in `.env`, after training, the script will save a report of the model performance in `models/report.csv` and a *pickle* file of the model itself in `models/model_files`.
 
 ### API server
 
@@ -157,51 +151,19 @@ mongod
 Then, to start the server, execute the script `server.py`:
 
 ```bash
-python assignment/server.py
+python server.py
 ```
 
-This command will start a uvicorn FastAPI server. The server will listen for API requests. On startup the server will check for the database connection and it will load the best trained model according to `assignment/models/report.csv` using the MAE metric. Again, if you want to change the behaviour of the scripts, there are several arguments. By running:
-
-```bash
-python assignment/server.py -h
-```
-
-You get:
-
-```
-usage: server.py [-h] [-m [{linear,xgboost,best}]] [-c [{MAE,r2}]] [-d [DATASET]] [--save-dir [SAVE_DIR]] [--db-url [DB_URL]]
-                 [--db-name [DB_NAME]] [--collection-name [COLLECTION_NAME]]
-
-options:
-  -h, --help            show this help message and exit
-  -m [{linear,xgboost,best}], --model [{linear,xgboost,best}]
-                        specify which type of model to use, or to just pick the best one
-  -c [{MAE,r2}], --criteria [{MAE,r2}]
-                        which criteria to use to pick the best model
-  -d [DATASET], --dataset [DATASET]
-                        the dataset path/url
-  --save-dir [SAVE_DIR]
-                        specify different directory where report and model are saved
-  --db-url [DB_URL]     the mongodb database url
-  --db-name [DB_NAME]   the mongodb database name
-  --collection-name [COLLECTION_NAME]
-                        the mongodb collection name
-```
-
-So, for example, you want to run the server using the best linear model according to the R2 metric, you can type:
-
-```bash
-python assignment/server.py -m linear -c r2
-```
+This command will start a uvicorn FastAPI server. The server will listen for API requests. On startup the server will check for the database connection.
 
 Once the server is running, you can make API requests to it. The two possible requests are `prediction` and `n-similar`.
 
 #### `/prediction`
 Given a diamond (all variables except price), predict its price.
 
-Method: `GET`
+Method: `POST`
 
-Arguments:
+Parameters:
 
 - `carat: float`
 - `cut: str`
@@ -212,21 +174,26 @@ Arguments:
 - `x: float`
 - `y: float`
 - `z: float`
+- `model: str`: which type of model to use for the prediction among `linear`, `xgboost` or `best`. Deafult is `best`.
+- `criteria: str`: which criteria to use to select the model among `mae` and `r2`. Default is `mae`.
 
 Return:
 - `prediction: float`
 
+NOTE: to keep it as developer friendly as possible, `model` and `criteria` have default values and can be omitted.
+
 Example:
+
 ```
 curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:8000/prediction?carat=0.7&cut=Ideal&color=H&clarity=SI1&depth=61.0&table=56&x=5.74&y=5.76&z=3.51"
 ```
 
-#### `/n-similar`
+#### `/similar`
 Given cut, color, clarity and carat, return the *n* most similar diamonds according to weight.
 
-Method: `GET`
+Method: `POST`
 
-Arguments:
+Parameters:
 
 - `cut: str`
 - `color: str`
@@ -239,7 +206,7 @@ Return:
 
 Example:
 ```
-curl -X GET -H "Content-Type: application/json" "http://127.0.0.1:8000/n-similar?cut=Ideal&color=H&clarity=SI1&carat=0.7&n=20"
+curl -X POST -H "Content-Type: application/json" "http://127.0.0.1:8000/n-similar?cut=Ideal&color=H&clarity=SI1&carat=0.7&n=20"
 ```
 
 All requests are saved to the database. Specifically, after a request is performed, a document is saved with the following fields:
@@ -255,7 +222,7 @@ All requests are saved to the database. Specifically, after a request is perform
 Instead of using the terminal, the API requests can be also made using a dedicated WebUI. To start the WebUI, use the following command which will start a *streamlit* WebUI on `http://localhost:8501`:
 
 ```bash
-streamlit run assignment/webui.py
+streamlit run webui.py
 ```
 
 ![alt text](images/webui.png)
@@ -265,6 +232,10 @@ streamlit run assignment/webui.py
 After inserting the arguments (which can be easily selcted from the dropdown menus for non-numeric ones), pressing the button *Predict* will display a prediction made by the model currently loaded in the server.
 
 ![alt text](images/predict.png)
+
+More advanced technical options like the model type and the criteria to choose the best model are hidden behind the `advanced` toggle, to avoid confusion for those who are less technical.
+
+![alt text](images/predict_adv.png)
 
 #### Finding similar diamonds
 

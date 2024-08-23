@@ -19,14 +19,9 @@ from assignment.preprocessing.train_preprocess import (
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-    encoding='utf-8',
-    format="%(name)s %(levelname)s: %(message)s",
-    level=logging.INFO
-)
 
 
-def train_ev_model(
+def train_evaluate_model(
     train_dataset: tuple[Any, Any],
     test_dataset: tuple[Any, Any],
     model_class: Any,
@@ -151,7 +146,7 @@ def pipeline(
         train_dataset, test_dataset = preprocess_diamond_linear_reg(
             diamond_df,  test_split, seed)
         logger.info("Training %s model...", model)
-        train_ev_model(
+        train_evaluate_model(
             train_dataset,
             test_dataset,
             LinearRegression,
@@ -180,7 +175,7 @@ def pipeline(
             )
 
         logger.info("Training %s model...", model)
-        train_ev_model(
+        train_evaluate_model(
             train_dataset,
             test_dataset,
             xgboost.XGBRegressor,
