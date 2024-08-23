@@ -16,7 +16,7 @@ def similar_n(cut, color, clarity, carat, n):
         "carat": carat,
         "n": n
     }
-    response = requests.get(
+    response = requests.post(
         f"http://{API_SERVER_URL}/n-similar",
         params=payload
     )
@@ -24,7 +24,23 @@ def similar_n(cut, color, clarity, carat, n):
     return pd.DataFrame(diamonds)
 
 
-def predict(cut, color, clarity, carat, depth, table, x, y, z):
+def predict(
+    cut,
+    color,
+    clarity,
+    carat,
+    depth,
+    table,
+    x,
+    y,
+    z,
+    model,
+    criteria
+):
+
+    model = model.split(" ")[0].lower()
+    criteria = criteria.lower()
+
     payload = {
         "cut": cut,
         "color": color,
@@ -35,8 +51,10 @@ def predict(cut, color, clarity, carat, depth, table, x, y, z):
         "x": x,
         "y": y,
         "z": z,
+        "model": model,
+        "criteria": criteria
     }
-    response = requests.get(
+    response = requests.post(
         f"http://{API_SERVER_URL}/prediction",
         params=payload
     )
@@ -53,6 +71,17 @@ st.write(
         "using the best model loaded in the server."
     )
 )
+
+advanced = st.toggle("Advanced")
+
+if advanced:
+    adv_col = st.columns(2)
+    model_type = adv_col[0].selectbox(
+        "Type of best model", ["Linear", "XGBoost", "Best overall"]
+    )
+    criteria = adv_col[1].selectbox(
+        "Model selection criteria", ["MAE", "R2"]
+    )
 
 cols1 = st.columns(5, vertical_alignment="bottom")
 cols2 = st.columns(5, vertical_alignment="bottom")
@@ -77,6 +106,11 @@ pred_z = cols2[3].number_input("Z", step=0.01, key="pred_z")
 pred_btn = cols2[4].button("Predict")
 
 if pred_btn:
+
+    if not advanced:
+        model_type = "Best overall"
+        criteria = "MAE"
+
     pred_price = predict(
         pred_cut,
         pred_color,
@@ -87,6 +121,8 @@ if pred_btn:
         pred_x,
         pred_y,
         pred_z,
+        model_type,
+        criteria
 
     )
     st.write(f"The predicted price is :blue-background[{pred_price:.2f}]")

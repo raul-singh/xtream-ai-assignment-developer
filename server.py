@@ -43,9 +43,8 @@ def get_similar_diamonds(
     return response
 
 
-@app.post("/prediction/{model}")
+@app.post("/prediction")
 def predict(
-    model: str,
     carat: float,
     cut: str,
     color: str,
@@ -56,6 +55,7 @@ def predict(
     y: float,
     z: float,
     request: Request,
+    model: str = "best",
     criteria: str = "mae",
 ) -> float:
 

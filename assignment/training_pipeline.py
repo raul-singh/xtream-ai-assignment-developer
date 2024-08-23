@@ -63,7 +63,7 @@ def train_ev_model(
         "type": model_type,
         "model_id": model_id,
         "r2": r2,
-        "MAE": mae
+        "mae": mae
     }
 
     # Save model performance report
@@ -71,7 +71,7 @@ def train_ev_model(
         report_df = pd.read_csv(os.path.join(save_dir, "report.csv"))
 
     except FileNotFoundError:
-        report_df = pd.DataFrame([], columns=["type", "model_id", "r2", "MAE"])
+        report_df = pd.DataFrame([], columns=["type", "model_id", "r2", "mae"])
 
     report["index"] = len(report_df)
     report_df.loc[len(report_df)] = report

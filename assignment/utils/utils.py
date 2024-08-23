@@ -42,12 +42,12 @@ def load_model_report() -> pd.DataFrame:
 def get_best_model_id(
     model_type: str,
     report_df: pd.DataFrame,
-    criteria: str = "MAE"
+    criteria: str = "mae"
 ):
-    if model_type != "overall":
+    if model_type != "best":
         report_df = report_df.loc[report_df["type"] == model_type]
 
-    if criteria == "MAE":
+    if criteria == "mae":
         ascending = True
     elif criteria == "r2":
         ascending = False
