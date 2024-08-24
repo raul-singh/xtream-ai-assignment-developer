@@ -113,10 +113,18 @@ There are three mandatory fields to put in the file:
 - `module`: the name of the module that contains the model's class
 - `class`: the class of the models itself. The model class must support the `.fit()` method for training and `.predict()` method for inference
 
-We have an additional field, which is not mandatory:
+We have additional fields, which is not mandatory:
 - `seed`: specify which seed to use
+- `model_kwargs`: keyword arguments that will be passed to the model class
 
-Example:
+    Example:
+    ```yaml
+    model_kwargs:
+        enable_categorical: True
+        random_state: 42
+    ```
+
+Field example:
 ```yaml
 name: linear
 module: sklearn.linear_model
@@ -182,6 +190,142 @@ The possible objects are:
 - `target`: the target variable, which will be removed from the X data and used for the Y data
 - `test_split`: the ratio of test samples compared to the training samples when splitting the dataset
 
+#### Hyperparameter tuning
+
+Additionally, hyperparameter tuning performed with `optuna` can be specified in the `hyperparameter_tuning` object. The fields are:
+- `n_trials`: how many hyperparameter tuning trials to perform
+- `test_split`: the test split ratio when performing the tuning
+- `params`: specify the parameters to optimize and other arguments to pass to the model. Each parameter has the following structure:
+
+    ```yaml
+    parameter_name:
+        trial: # The Trial class function such as suggest_float
+        args: # A list of arguments to pass to the trial function (both args and kwargs)
+    ```
+
+    Example:
+
+    ```yaml
+    lambda:
+        trial: suggest_float
+        args:
+            - lambda
+            - 0.00000001
+            - 1.0
+            - log: True
+    ```
+
+    It is possible to specify additional keywork arguments that will be passed to the model, for example:
+
+    ```yaml
+    enable_categorical: True
+    random_state: 42
+    ```
+
+#### Pipeline Examples
+
+The following is an example of the linear regression pipeline shown in `notebooks/MP01_Diamonds_Modelling.ipynb`:
+```yaml
+name: linear
+module: sklearn.linear_model
+class: LinearRegression
+seed: 42
+pipeline:
+    drop: [depth, table, y, z]
+    dummies:
+        columns: [cut, color, clarity]
+        drop_first: True
+
+    target: price
+    test_split: 0.2
+```
+
+The following is the xgboost pipeline shown in the same notebook, with hyperparameter tuning:
+
+```yaml
+name: xgboost
+module: xgboost
+class: XGBRegressor
+seed: &seed 42
+model_kwargs:
+  enable_categorical: True
+  random_state: *seed
+
+pipeline:
+    categorical:
+
+        - variable: cut
+            categories: [Fair, Good, Very Good, Ideal, Premium]
+            ordered: True
+
+        - variable: color
+            categories: [D, E, F, G, H, I, J]
+            ordered: True
+
+        - variable: clarity
+            categories: [IF, VVS1, VVS2, VS1, VS2, SI1, SI2, I1]
+            ordered: True
+
+    target: price
+    test_split: 0.2
+
+hyperparameter_tuning:
+    n_trials: 100
+    test_split: 0.2
+    params:
+        lambda:
+            trial: suggest_float
+            args:
+                - lambda
+                - 0.00000001
+                - 1.0
+                - log: True
+        alpha:
+            trial: suggest_float
+            args:
+                - alpha
+                - 0.00000001
+                - 1.0
+                - log: True
+        colsample_bytree:
+            trial: suggest_categorical
+            args:
+                - colsample_bytree
+                - [0.3, 0.4, 0.5, 0.7]
+        subsample:
+            trial: suggest_categorical
+            args:
+                - subsample
+                - [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        learning_rate:
+            trial: suggest_float
+            args:
+                - learning_rate
+                - 0.00000001
+                - 1.0
+                - log: True
+        n_estimators:
+            trial: suggest_int
+            args:
+                - n_estimators
+                - 100
+                - 1000
+        max_depth:
+            trial: suggest_int
+            args:
+                - max_depth
+                - 3
+                - 9
+        min_child_weight:
+            trial: suggest_int
+            args:
+                - min_child_weight
+                - 1
+                - 10
+        enable_categorical: True
+        random_state: *seed
+```
+
 The training pipeline can be executed by launching the script `run_pipeline.py`. It is mandatory to specify the argument `-p`/`--pipeline` to specify the path of the defined pipeline to use. For example, from the top level of this repo:
 
 ```bash
@@ -189,30 +333,6 @@ python run_pipeline.py -p pipelines/linear.yml
 ```
 
 Running this script will result in training the model specified in the `linear.yml` file using the defined data pipeline.
-
-All the possible options can be seen with:
-```bash
-python assignment/training_pipeline.py -h
-```
-
-- `-h, --help`: shows the help message
-- `-m --model`: specify which model to train among `linear` and `xgboost`, default is `linear`
-- `-t, --tuning`: flag used to specify whether the pipeline should include hyperparameter tuning (for XGBoost)
-- `-s, --seed`: specificy the random seed, default is `42`
-- `--tuning-trials`: how many hyperparameter tuning trials to perform, default is `100`
-- `test-split`: what ratio of training data to reserve for the test set, default is `0.2`
-
-So, for example, if you want to train an `xgboost` model with hyperparameter tuning, you can do:
-
-```bash
-python assignment/training_pipeline.py --model xgboost --tuning
-```
-
-Or, for short:
-
-```bash
-python assignment/training_pipeline.py -m xgboost -t
-```
 
 If using the default paths specified in `.env`, after training, the script will save a report of the model performance in `models/report.csv` and a *pickle* file of the model itself in `models/model_files`.
 
@@ -232,7 +352,16 @@ python server.py
 
 This command will start a uvicorn FastAPI server. The server will listen for API requests. On startup the server will check for the database connection.
 
-Once the server is running, you can make API requests to it. The two possible requests are `prediction` and `n-similar`.
+The script has an optional argument: `-e`/`--env-path`.
+By default, the server will use the `.env` file as environment, but it is possible to use a custom environment file using the argument discussed above:
+
+```bash
+python server.py -e path/to/custom/env
+```
+
+This can be useful for testing.
+
+Once the server is running, you can make API requests to it. The two possible requests are `prediction` and `similar`.
 
 #### `/prediction`
 Given a diamond (all variables except price), predict its price.
@@ -318,3 +447,32 @@ More advanced technical options like the model type and the criteria to choose t
 After inserting the arguments, pressing the button *Find* will display a table containing the *n* most similar diamonds. The table is interactive and can be searched and enlarged.
 
 ![alt text](images/n-similar.png)
+
+### Testing
+
+The repo contains some automated tests in the folder `test` that can be easily run using `pytest`. The components under test are the model training pipeline and the APIs, checking if they output the correct response, both in functioning cases and in situations where the server cannot find a model to fulfill the request.
+
+The testing makes use of a custom environment file (`test/.env.test`) that specifies a different model save directory and a different database in order not to affect the main database. The content of the file is:
+
+```env
+DATASET_PATH = "https://raw.githubusercontent.com/xtreamsrl/xtream-ai-assignment-engineer/main/datasets/diamonds/diamonds.csv"
+MODEL_DIR_PATH = "test/test_models"
+API_SERVER_URL = "127.0.0.1:8000"
+DB_URL = "mongodb://localhost:27017/"
+DB_NAME = "test_diamond_db"
+DB_COLLECTION = "api_requests"
+```
+
+To run the test, two things are required:
+1. The conda environment `diamond-env` must be active
+2. The `server.py` script must be running using the custom environment
+
+So, these are the commands to correctly set everything up and test:
+
+```bash
+conda activate diamond-env
+python server.py -e test/.env.test
+pytest
+```
+
+If everything is set up correctly the code should pass all tests.
