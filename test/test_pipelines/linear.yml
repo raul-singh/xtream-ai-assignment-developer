@@ -1,0 +1,20 @@
+name: linear
+module: sklearn.linear_model
+class: LinearRegression
+seed: 42
+pipeline:
+  drop:
+    - depth
+    - table
+    - y
+    - z
+
+  dummies:
+    columns:
+      - cut
+      - color
+      - clarity
+    drop_first: True
+
+  target: price
+  test_split: 0.2

@@ -1,40 +1,33 @@
 import logging
 import os
 import pickle
-from typing import Union
+from typing import Any
 import pandas as pd
-from sklearn.linear_model import LinearRegression
-from xgboost import XGBRegressor
-
-from assignment.preprocessing.train_preprocess import basic_preprocess_diamonds
-
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
 
+MODEL_DIR_PATH = os.getenv("MODEL_DIR_PATH")
 
-def load_dataset(dataset_path: str) -> pd.DataFrame:
-    logger.info("Loading dataset...")
-    diamond_df = pd.read_csv(dataset_path)
-    diamond_df = basic_preprocess_diamonds(diamond_df)
-    logger.info("Dataset loaded.")
-    return diamond_df
+
+class ModelNotFoundError(Exception):
+    pass
 
 
 def load_model_report() -> pd.DataFrame:
     report_path = os.path.join(
-        os.getenv("MODEL_DIR_PATH"),
+        MODEL_DIR_PATH,
         "report.csv"
     )
 
     try:
         report_df = pd.read_csv(report_path)
+        logger.info("Model report loaded.")
 
     except FileNotFoundError:
-        raise FileNotFoundError((
-            "No model report found. Make sure to train a model "
-            "and put it in the right directory using training_pipeline.py"
-        ))
+        raise FileNotFoundError(
+            "No model report found. There are no trained models."
+        )
 
     return report_df
 
@@ -53,8 +46,12 @@ def get_best_model_id(
         ascending = False
 
     ranking = report_df[criteria].sort_values(ascending=ascending).index
+
+    if len(ranking) == 0:
+        raise ModelNotFoundError
+
     best = report_df.loc[ranking[0], "model_id"]
-    actual_model_type = report_df.loc[ranking[0], "type"]
+    pipeline_path = report_df.loc[ranking[0], "pipeline_path"]
 
     logger.info(
         "Found best %s model with %s of %f",
@@ -63,13 +60,13 @@ def get_best_model_id(
         report_df.loc[ranking[0], criteria]
     )
 
-    return best, actual_model_type
+    return best, pipeline_path
 
 
 def load_model(
     model_id: str,
     model_dir_path: str
-) -> Union[LinearRegression, XGBRegressor]:
+) -> Any:
 
     with open(
         os.path.join(model_dir_path, "model_files", model_id),

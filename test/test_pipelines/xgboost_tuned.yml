@@ -1,0 +1,104 @@
+name: xgboost
+module: xgboost
+class: XGBRegressor
+seed: &seed 42
+pipeline:
+  categorical:
+
+    - variable: cut
+      categories:
+        - Fair
+        - Good
+        - Very Good
+        - Ideal
+        - Premium
+      ordered: True
+
+    - variable: color
+      categories:
+        - D
+        - E
+        - F
+        - G
+        - H
+        - I
+        - J
+      ordered: True
+
+    - variable: clarity
+      categories:
+        - IF
+        - VVS1
+        - VVS2
+        - VS1
+        - VS2
+        - SI1
+        - SI2
+        - I1
+      ordered: True
+
+  target: price
+  test_split: 0.2
+
+model_kwargs:
+  enable_categorical: True
+  random_state: *seed
+
+hyperparameter_tuning:
+  n_trials: 20
+  test_split: 0.2
+  params:
+    lambda:
+      trial: suggest_float
+      args:
+        - lambda
+        - 0.00000001
+        - 1.0
+        - log: True
+    alpha:
+      trial: suggest_float
+      args:
+        - alpha
+        - 0.00000001
+        - 1.0
+        - log: True
+    colsample_bytree:
+      trial: suggest_categorical
+      args:
+        - colsample_bytree
+        - [0.3, 0.4, 0.5, 0.7]
+    subsample:
+      trial: suggest_categorical
+      args:
+        - subsample
+        - [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    learning_rate:
+      trial: suggest_float
+      args:
+        - learning_rate
+        - 0.00000001
+        - 1.0
+        - log: True
+    n_estimators:
+      trial: suggest_int
+      args:
+        - n_estimators
+        - 100
+        - 1000
+    max_depth:
+      trial: suggest_int
+      args:
+        - max_depth
+        - 3
+        - 9
+    min_child_weight:
+      trial: suggest_int
+      args:
+        - min_child_weight
+        - 1
+        - 10
+    enable_categorical: True
+    random_state: *seed
+
+
+

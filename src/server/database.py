@@ -58,6 +58,7 @@ def store_request(
     document = {
         "method": request.method,
         "url": str(request.url),
+        "path": str(request.url.path),
         "query_parameters": dict(request.query_params),
         "response": response,
         "datetime": date_time,

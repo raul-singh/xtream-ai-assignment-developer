@@ -4,15 +4,10 @@ from typing import Any
 
 from dotenv import load_dotenv
 
-from assignment.preprocessing.inference_preprocess import (
-    preprocess_linear_sample,
-    preprocess_xgboost_sample,
-)
+from assignment.preprocessing.inference_preprocess import preprocess_sample
+from assignment.utils.model_loading import get_best_model_id, load_model, load_model_report
 from assignment.utils.utils import (
-    get_best_model_id,
     load_dataset,
-    load_model,
-    load_model_report,
 )
 
 # Create and initialize logger
@@ -23,13 +18,13 @@ load_dotenv()
 DATASET_PATH = os.getenv("DATASET_PATH")
 MODEL_DIR_PATH = os.getenv("MODEL_DIR_PATH")
 
-diamond_df = load_dataset(DATASET_PATH)
+diamond_df = load_dataset()
 
 # These variables are initialized to None because
 # they are lazily loaded when needed
 loaded_model = None
 model_id = None
-loaded_model_type = None
+loaded_model_pipeline_path = None
 report_df = None
 
 
@@ -57,13 +52,12 @@ def make_prediction(
     criteria: str
 ) -> float:
 
-    global diamond_df, report_df, loaded_model, loaded_model_type
+    global diamond_df, report_df, loaded_model, loaded_model_pipeline_path
 
     if report_df is None:
         report_df = load_model_report()
-        logger.info("Model report loaded.")
 
-    best_model_id, actual_model_type = get_best_model_id(
+    best_model_id, pipeline_path = get_best_model_id(
         model_type,
         report_df,
         criteria
@@ -71,13 +65,14 @@ def make_prediction(
 
     if best_model_id != model_id:
         loaded_model = load_model(best_model_id, MODEL_DIR_PATH)
-        loaded_model_type = actual_model_type
+        loaded_model_pipeline_path = pipeline_path
     else:
         logger.info("Model is already loaded.")
 
-    if loaded_model_type == "linear":
-        to_predict = preprocess_linear_sample(sample, diamond_df)
-    elif loaded_model_type == "xgboost":
-        to_predict = preprocess_xgboost_sample(sample)
+    to_predict = preprocess_sample(
+        sample,
+        diamond_df,
+        loaded_model_pipeline_path
+    )
 
     return float(loaded_model.predict(to_predict)[0])

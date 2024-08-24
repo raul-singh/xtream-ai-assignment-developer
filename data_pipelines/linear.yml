@@ -1,2 +1,0 @@
-module: sklearn.linear_model
-class: LinearRegression

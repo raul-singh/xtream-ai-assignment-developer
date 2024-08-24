@@ -14,3 +14,5 @@ dependencies:
   - requests
   - pymongo
   - python-dotenv
+  - pytest
+  - pytest-order

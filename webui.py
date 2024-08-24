@@ -17,7 +17,7 @@ def similar_n(cut, color, clarity, carat, n):
         "n": n
     }
     response = requests.post(
-        f"http://{API_SERVER_URL}/n-similar",
+        f"http://{API_SERVER_URL}/similar",
         params=payload
     )
     diamonds = response.json()

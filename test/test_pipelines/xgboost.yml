@@ -1,0 +1,45 @@
+name: xgboost
+module: xgboost
+class: XGBRegressor
+seed: &seed 42
+pipeline:
+  categorical:
+
+    - variable: cut
+      categories:
+        - Fair
+        - Good
+        - Very Good
+        - Ideal
+        - Premium
+      ordered: True
+
+    - variable: color
+      categories:
+        - D
+        - E
+        - F
+        - G
+        - H
+        - I
+        - J
+      ordered: True
+
+    - variable: clarity
+      categories:
+        - IF
+        - VVS1
+        - VVS2
+        - VS1
+        - VS2
+        - SI1
+        - SI2
+        - I1
+      ordered: True
+
+  target: price
+  test_split: 0.2
+
+model_kwargs:
+  enable_categorical: True
+  random_state: *seed
