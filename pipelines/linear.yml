@@ -3,17 +3,9 @@ module: sklearn.linear_model
 class: LinearRegression
 seed: 42
 pipeline:
-  drop:
-    - depth
-    - table
-    - y
-    - z
-
+  drop: [depth, table, y, z]
   dummies:
-    columns:
-      - cut
-      - color
-      - clarity
+    columns: [cut, color, clarity]
     drop_first: True
 
   target: price

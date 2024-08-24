@@ -1,14 +1,16 @@
 import logging
+from dotenv import load_dotenv
 
 import uvicorn
 from fastapi import FastAPI, Request, HTTPException
 
-from assignment.server.database import db_check, store_request
-from assignment.server.server_logic import (
+from src.server.database import db_check, store_request
+from src.server.server_logic import (
     make_prediction,
     similar_diamond_request,
 )
-from assignment.utils.model_loading import ModelNotFoundError
+from src.utils.model_loading import ModelNotFoundError
+import argparse
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
@@ -98,6 +100,25 @@ def predict(
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-e",
+        "--env-path",
+        nargs='?',
+        default="",
+        help=(
+            "specify path of a custom environment file, "
+            "mainly for testing purposes"
+        )
+    )
+    args = parser.parse_args()
+    custom_env = args.env_path
+
+    if custom_env == "":
+        load_dotenv()
+    else:
+        load_dotenv(custom_env, override=True)
+
     db_check()
     uvicorn.run(app)
 

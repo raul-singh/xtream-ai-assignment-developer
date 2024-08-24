@@ -17,7 +17,6 @@ def preprocess_data(
     df: pd.DataFrame,
     pipeline_config: dict
 ) -> tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
-
     df = df.copy()
     pipeline = pipeline_config["pipeline"]
 

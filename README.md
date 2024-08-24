@@ -106,13 +106,89 @@ The API server requires a MongoDB database where it will store all the API reque
 
 ### Training pipeline
 
-The training pipeline can be executed by launching the script `run_pipeline.py`. From the main directory of the repo:
+To make the training pipeline as user friendly and as extensible as possible, the training pipelines can be entirely defined in `yml` files. Three example are stored in the `pipelines` directory, which define the three different approaches shown in `notebooks/MP01_Diamonds_Modelling.ipynb`.
 
-```bash
-python run_pipeline.py
+There are three mandatory fields to put in the file:
+- `name`: the name of the model type or approach, which will be used when saving and loading the models
+- `module`: the name of the module that contains the model's class
+- `class`: the class of the models itself. The model class must support the `.fit()` method for training and `.predict()` method for inference
+
+We have an additional field, which is not mandatory:
+- `seed`: specify which seed to use
+
+Example:
+```yaml
+name: linear
+module: sklearn.linear_model
+class: LinearRegression
+seed: 42
 ```
 
-Running the script without flags will result in training a linear model using a dataset from the default location. This behaviour can be changed using flags and arguments.
+#### Data pipeline
+Under the field `pipeline`, it is possible to specify how the data is preprocessed.
+
+```yaml
+pipeline:
+    # Objects
+```
+
+The possible objects are:
+
+- `drop`: specify a list of columns to drop from the datframe
+
+    Example:
+    ```yaml
+    drop:
+        - depth
+        - table
+        - y
+        - z
+    ```
+    Or, more compactly:
+    ```yaml
+    drop: [depth, table, y, z]
+    ```
+
+- `dummies`: whether to create dummy variables. It has two subfields:
+    - `columns`: a list of the variables from which the pipeline will create dummies
+    - `drop_first`: specify if the `drop_first` argument of the function `pd.get_dummies` should be `True/False`
+
+    Example:
+    ```yaml
+    dummies:
+        columns:
+            - cut
+            - color
+            - clarity
+        drop_first: True
+    ```
+
+- `categorical`: specify a list of variables to convert to categoirical variables. Every variable is defined as an object with the following fields:
+    - `variable`: the name of the variable to convert to categorical
+    - `categories`: a list of the different categories
+    - `ordered`: the `ordered` parameter to pass to the `pd.Categorical` function
+
+    Example:
+    ```yaml
+    categorical:
+        - variable: cut
+            categories: [Fair, Good, Very Good, Ideal, Premium]
+            ordered: True
+        - variable: color
+            categories: [D, E, F, G, H, I, J]
+            ordered: True
+    ```
+
+- `target`: the target variable, which will be removed from the X data and used for the Y data
+- `test_split`: the ratio of test samples compared to the training samples when splitting the dataset
+
+The training pipeline can be executed by launching the script `run_pipeline.py`. It is mandatory to specify the argument `-p`/`--pipeline` to specify the path of the defined pipeline to use. For example, from the top level of this repo:
+
+```bash
+python run_pipeline.py -p pipelines/linear.yml
+```
+
+Running this script will result in training the model specified in the `linear.yml` file using the defined data pipeline.
 
 All the possible options can be seen with:
 ```bash

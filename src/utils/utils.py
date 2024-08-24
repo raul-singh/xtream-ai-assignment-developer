@@ -3,19 +3,16 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 
-from assignment.preprocessing.train_preprocess import basic_preprocess_diamonds
+from src.preprocessing.train_preprocess import basic_preprocess_diamonds
 
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-DATASET_PATH = os.getenv("DATASET_PATH")
 
-
-def load_dataset() -> pd.DataFrame:
+def load_dataset(dataset_path) -> pd.DataFrame:
     logger.info("Loading dataset...")
-    df = pd.read_csv(DATASET_PATH)
+    df = pd.read_csv(dataset_path)
     df = basic_preprocess_diamonds(df)
     logger.info("Dataset loaded and pre-processed.")
     return df

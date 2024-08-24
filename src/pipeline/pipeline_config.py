@@ -1,9 +1,5 @@
-import os
-from dotenv import load_dotenv
 import yaml
 
-load_dotenv()
-PIPELINE_CONFIG_DIR = os.getenv("PIPELINE_CONFIG_DIR")
 MANDATORY_FIELDS = [
     "module",
     "class",

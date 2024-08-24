@@ -3,8 +3,9 @@ import shutil
 from dotenv import load_dotenv
 import pymongo
 import requests
+import pytest
 
-load_dotenv()
+load_dotenv(os.path.join("test", ".env.test"), override=True)
 API_SERVER_URL = os.getenv("API_SERVER_URL")
 DB_URL = os.getenv("DB_URL")
 DB_NAME = os.getenv("DB_NAME")
@@ -43,7 +44,11 @@ def test_similar_diamonds():
     assert n_docs_after - n_docs_before == 1
 
 
-def test_diamond_prediction():
+@pytest.mark.parametrize("model_type", [
+    "linear",
+    "xgboost",
+])
+def test_diamond_prediction(model_type: str):
     payload = {
         "cut": "Ideal",
         "color": "H",
@@ -54,7 +59,7 @@ def test_diamond_prediction():
         "x": 5.74,
         "y": 5.76,
         "z": 3.51,
-        "model": "linear",
+        "model": model_type,
         "criteria": "mae"
     }
 
@@ -127,6 +132,7 @@ def test_prediction_no_report():
         "z": 3.51,
     }
 
+    # Remove all trained models (from the test dir)
     shutil.rmtree(os.path.join("test", "test_models"))
 
     with pymongo.MongoClient(DB_URL) as client:

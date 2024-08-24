@@ -3,10 +3,7 @@ import logging
 import os
 
 from dotenv import load_dotenv
-from assignment import pipeline
-
-load_dotenv()
-MODEL_DIR_PATH = os.getenv("MODEL_DIR_PATH")
+from src import pipeline
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
@@ -29,7 +26,12 @@ def main():
 
     args = parser.parse_args()
     pipeline_path = args.pipeline
-    pipeline(pipeline_path, MODEL_DIR_PATH)
+
+    load_dotenv()
+    model_dir_path = os.getenv("MODEL_DIR_PATH")
+    dataset_path = os.getenv("DATASET_PATH")
+
+    pipeline(pipeline_path, dataset_path, model_dir_path)
 
 
 if __name__ == "__main__":

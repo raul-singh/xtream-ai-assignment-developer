@@ -9,13 +9,13 @@ import optuna
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from assignment.pipeline.pipeline_config import load_config
+from src.pipeline.pipeline_config import load_config
 
-from assignment.preprocessing.train_preprocess import (
+from src.preprocessing.train_preprocess import (
     get_train_test_dataset,
     preprocess_data,
 )
-from assignment.utils.utils import extract_args_kwargs, load_dataset
+from src.utils.utils import extract_args_kwargs, load_dataset
 
 DEFAULT_TRAIN_TEST_SPLIT = 0.2
 
@@ -148,9 +148,10 @@ def tune_hyperparameters(
 
 def pipeline(
     pipeline_path: str,
+    dataset_path: str,
     save_dir_path: str,
 ):
-    diamond_df = load_dataset()
+    diamond_df = load_dataset(dataset_path)
     pipeline_config = load_config(pipeline_path)
     x, y = preprocess_data(diamond_df, pipeline_config)
     train_dataset, test_dataset = get_train_test_dataset(

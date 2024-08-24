@@ -1,8 +1,9 @@
 import os
+from dotenv import load_dotenv
 import pandas as pd
 import pytest
 
-from assignment import pipeline
+from src import pipeline
 
 
 @pytest.mark.order(1)
@@ -13,7 +14,8 @@ from assignment import pipeline
 ])
 def test_pipeline(pipeline_file: str):
 
-    os.environ["MODEL_DIR_PATH"] = os.path.join("test", "test_models")
+    load_dotenv()
+    dataset_path = os.getenv("DATASET_PATH")
 
     model_save_path = os.path.join("test", "test_models")
     trained_models_path = os.path.join(model_save_path, "model_files")
@@ -30,7 +32,7 @@ def test_pipeline(pipeline_file: str):
     except FileNotFoundError:
         n_models_report = 0
 
-    pipeline(pipeline_path, model_save_path)
+    pipeline(pipeline_path, dataset_path, model_save_path)
 
     n_trained_models_after = len(os.listdir(trained_models_path))
     n_models_report_after = len(pd.read_csv(report_path))

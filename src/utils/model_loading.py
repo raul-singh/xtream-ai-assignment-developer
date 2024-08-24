@@ -7,16 +7,14 @@ import pandas as pd
 # Create and initialize logger
 logger = logging.getLogger(__name__)
 
-MODEL_DIR_PATH = os.getenv("MODEL_DIR_PATH")
-
 
 class ModelNotFoundError(Exception):
     pass
 
 
-def load_model_report() -> pd.DataFrame:
+def load_model_report(report_dir: str) -> pd.DataFrame:
     report_path = os.path.join(
-        MODEL_DIR_PATH,
+        report_dir,
         "report.csv"
     )
 

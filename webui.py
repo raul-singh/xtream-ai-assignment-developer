@@ -4,6 +4,8 @@ import pandas as pd
 import streamlit as st
 import requests
 
+from src.utils.model_loading import ModelNotFoundError
+
 load_dotenv()
 API_SERVER_URL = os.getenv("API_SERVER_URL")
 
@@ -58,6 +60,9 @@ def predict(
         f"http://{API_SERVER_URL}/prediction",
         params=payload
     )
+    if response.status_code == 404:
+        raise ModelNotFoundError
+
     return response.json()
 
 
@@ -111,21 +116,25 @@ if pred_btn:
         model_type = "Best overall"
         criteria = "MAE"
 
-    pred_price = predict(
-        pred_cut,
-        pred_color,
-        pred_clarity,
-        pred_carat,
-        pred_depth,
-        pred_table,
-        pred_x,
-        pred_y,
-        pred_z,
-        model_type,
-        criteria
+    try:
+        pred_price = predict(
+            pred_cut,
+            pred_color,
+            pred_clarity,
+            pred_carat,
+            pred_depth,
+            pred_table,
+            pred_x,
+            pred_y,
+            pred_z,
+            model_type,
+            criteria
 
-    )
-    st.write(f"The predicted price is :blue-background[{pred_price:.2f}]")
+        )
+        st.write(f"The predicted price is :blue-background[{pred_price:.2f}]")
+
+    except ModelNotFoundError:
+        st.write(":red-background[No model available]")
 
 st.write("---")
 st.write("## Find *n* similar")

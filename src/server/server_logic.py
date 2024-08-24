@@ -2,26 +2,22 @@ import logging
 import os
 from typing import Any
 
-from dotenv import load_dotenv
-
-from assignment.preprocessing.inference_preprocess import preprocess_sample
-from assignment.utils.model_loading import get_best_model_id, load_model, load_model_report
-from assignment.utils.utils import (
+from src.preprocessing.inference_preprocess import preprocess_sample
+from src.utils.model_loading import (
+    get_best_model_id,
+    load_model,
+    load_model_report,
+)
+from src.utils.utils import (
     load_dataset,
 )
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)
 
-# Loading variables from .env file
-load_dotenv()
-DATASET_PATH = os.getenv("DATASET_PATH")
-MODEL_DIR_PATH = os.getenv("MODEL_DIR_PATH")
-
-diamond_df = load_dataset()
-
 # These variables are initialized to None because
 # they are lazily loaded when needed
+diamond_df = None
 loaded_model = None
 model_id = None
 loaded_model_pipeline_path = None
@@ -31,6 +27,10 @@ report_df = None
 def similar_diamond_request(payload: dict[str, Any]) -> list[dict[str: Any]]:
 
     global diamond_df
+
+    if diamond_df is None:
+        dataset_path = os.getenv("DATASET_PATH")
+        diamond_df = load_dataset(dataset_path)
 
     similar_diamonds = diamond_df.loc[
         (diamond_df["cut"] == payload["cut"])
@@ -49,13 +49,16 @@ def similar_diamond_request(payload: dict[str, Any]) -> list[dict[str: Any]]:
 def make_prediction(
     model_type: str,
     sample: dict[str, Any],
-    criteria: str
+    criteria: str,
 ) -> float:
 
     global diamond_df, report_df, loaded_model, loaded_model_pipeline_path
 
+    model_dir_path = os.getenv("MODEL_DIR_PATH")
+    logger.info("Model directory path is %s", model_dir_path)
+
     if report_df is None:
-        report_df = load_model_report()
+        report_df = load_model_report(model_dir_path)
 
     best_model_id, pipeline_path = get_best_model_id(
         model_type,
@@ -64,7 +67,7 @@ def make_prediction(
     )
 
     if best_model_id != model_id:
-        loaded_model = load_model(best_model_id, MODEL_DIR_PATH)
+        loaded_model = load_model(best_model_id, model_dir_path)
         loaded_model_pipeline_path = pipeline_path
     else:
         logger.info("Model is already loaded.")
