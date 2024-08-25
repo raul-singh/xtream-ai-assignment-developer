@@ -1,9 +1,10 @@
 import os
 import shutil
-from dotenv import load_dotenv
+
 import pymongo
-import requests
 import pytest
+import requests
+from dotenv import load_dotenv
 
 load_dotenv(os.path.join("test", ".env.test"), override=True)
 API_SERVER_URL = os.getenv("API_SERVER_URL")

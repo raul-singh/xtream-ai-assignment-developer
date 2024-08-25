@@ -9,8 +9,8 @@ import optuna
 import pandas as pd
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from src.pipeline.pipeline_config import load_config
 
+from src.pipeline.pipeline_config import load_config
 from src.preprocessing.train_preprocess import (
     get_train_test_dataset,
     preprocess_data,

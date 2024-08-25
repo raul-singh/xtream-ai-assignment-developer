@@ -1,10 +1,10 @@
 import logging
 import os
-from dotenv import load_dotenv
+
 import pandas as pd
+from dotenv import load_dotenv
 
 from src.preprocessing.train_preprocess import basic_preprocess_diamonds
-
 
 # Create and initialize logger
 logger = logging.getLogger(__name__)

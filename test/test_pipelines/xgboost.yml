@@ -6,35 +6,15 @@ pipeline:
   categorical:
 
     - variable: cut
-      categories:
-        - Fair
-        - Good
-        - Very Good
-        - Ideal
-        - Premium
+      categories: [Fair, Good, Very Good, Ideal, Premium]
       ordered: True
 
     - variable: color
-      categories:
-        - D
-        - E
-        - F
-        - G
-        - H
-        - I
-        - J
+      categories: [D, E, F, G, H, I, J]
       ordered: True
 
     - variable: clarity
-      categories:
-        - IF
-        - VVS1
-        - VVS2
-        - VS1
-        - VS2
-        - SI1
-        - SI2
-        - I1
+      categories: [IF, VVS1, VVS2, VS1, VS2, SI1, SI2, I1]
       ordered: True
 
   target: price
